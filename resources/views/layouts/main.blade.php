@@ -30,21 +30,21 @@ Esto se logra con la directiva @yield('nombre')
                 // La función url() permite generar una URL absoluta a partir de la carpeta [public] de
                 // Laravel, con el string que le pasamos por parámetro.
                 ?>
-                <a class="navbar-brand" href="{{ url('/') }}">DV Películas</a>
+                <a class="navbar-brand" href="{{ route('home') }}">DV Películas</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Abrir/cerrar menú de navegación">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="collapse navbar-collapse" id="navbar">
                     <ul class="navbar-nav">
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url('/') }}">Home</a>
+                            <a class="nav-link" href="{{ route('home') }}">Home</a>
                             <!-- <a class="nav-link active" aria-current="page" href="#">Home</a> -->
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url('nosotros') }}">Nosotros</a>
+                            <a class="nav-link" href="{{ route('nosotros') }}">Nosotros</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url('admin/peliculas') }}">Ir al Panel</a>
+                            <a class="nav-link" href="{{ route('admin.peliculas.listado') }}">Ir al Panel</a>
                         </li>
                     </ul>
                 </div>

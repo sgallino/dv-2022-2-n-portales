@@ -56,13 +56,28 @@ use Illuminate\Support\Facades\Route;
  *
  * Para que esto funcione, vamos a necesitar crear el controller.
  * Por defecto, los controllers se ubican en la carpeta [app/Http/Controllers].
+ *
+ * Las rutas pueden, también, tener múltiples parámetros adicionales que podemos definirles, a través de
+ * su interfaz fluida.
+ * Por ejemplo, tenemos la propiedad "name" que permite definir un nombre a la ruta.
+ * Esto no modifica en nada el HTML que se genera, pero nos permite que en el framework nos refiramos a las
+ * rutas por su nombre, en vez de su URL.
  */
 //Route::get('/', function () {
 //    return view('welcome');
 //});
 
-Route::get('/', [\App\Http\Controllers\HomeController::class, 'home']);
+Route::get('/', [\App\Http\Controllers\HomeController::class, 'home'])
+    ->name('home');
 
-Route::get('nosotros', [\App\Http\Controllers\NosotrosController::class, 'index']);
+Route::get('nosotros', [\App\Http\Controllers\NosotrosController::class, 'index'])
+    ->name('nosotros');
 
-Route::get('admin/peliculas', [\App\Http\Controllers\AdminPeliculasController::class, 'index']);
+Route::get('admin/peliculas', [\App\Http\Controllers\AdminPeliculasController::class, 'index'])
+    ->name('admin.peliculas.listado');
+
+Route::get('admin/peliculas/nueva', [\App\Http\Controllers\AdminPeliculasController::class, 'nuevaForm'])
+    ->name('admin.peliculas.nueva.form');
+
+Route::post('admin/peliculas/nueva', [\App\Http\Controllers\AdminPeliculasController::class, 'nuevaGrabar'])
+    ->name('admin.peliculas.nueva.grabar');
