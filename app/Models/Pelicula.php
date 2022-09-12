@@ -48,4 +48,20 @@ class Pelicula extends Model
     // $fillable es un array que debe contener todos los nombres de los campos que queremos permita en
     // los métodos de create y update para la "asignación masiva" (mass assignment).
     protected $fillable = ['titulo', 'precio', 'fecha_estreno', 'descripcion', 'portada', 'portada_descripcion'];
+
+    public const VALIDATE_RULES = [
+//            'titulo' => ['required', 'min:2'],
+        'titulo' => 'required|min:2',
+        'precio' => 'required|numeric|min:0',
+        'fecha_estreno' => 'required',
+    ];
+
+    public const VALIDATE_MESSAGES = [
+        'titulo.required' => 'El título no puede quedar vacío.',
+        'titulo.min' => 'El título debe tener al menos :min caracteres.',
+        'precio.required' => 'El precio no puede quedar vacío.',
+        'precio.numeric' => 'El precio debe ser un número.',
+        'precio.min' => 'El precio debe ser positivo.',
+        'fecha_estreno.required' => 'La fecha de estreno no puede quedar vacía.',
+    ];
 }

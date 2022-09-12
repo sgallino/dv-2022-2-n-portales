@@ -73,11 +73,55 @@ Route::get('/', [\App\Http\Controllers\HomeController::class, 'home'])
 Route::get('nosotros', [\App\Http\Controllers\NosotrosController::class, 'index'])
     ->name('nosotros');
 
-Route::get('admin/peliculas', [\App\Http\Controllers\AdminPeliculasController::class, 'index'])
-    ->name('admin.peliculas.listado');
+// Creamos (esto es opcional) un grupo de rutas.
+// Esto permite poner configuración común a todas las rutas que estén contenidas por el grupo.
+// Por ejemplo, ponemos un prefijo común para la URL de las rutas.
+Route::prefix('admin/peliculas')
+    // Configuramos el Controller que, por defecto, todas las rutas del grupo deben usar.
+    ->controller(\App\Http\Controllers\AdminPeliculasController::class)
+    ->group(function() {
+        Route::get('/','index')
+            ->name('admin.peliculas.listado');
 
-Route::get('admin/peliculas/nueva', [\App\Http\Controllers\AdminPeliculasController::class, 'nuevaForm'])
-    ->name('admin.peliculas.nueva.form');
+        Route::get('/nueva','nuevaForm')
+            ->name('admin.peliculas.nueva.form');
 
-Route::post('admin/peliculas/nueva', [\App\Http\Controllers\AdminPeliculasController::class, 'nuevaGrabar'])
-    ->name('admin.peliculas.nueva.grabar');
+        Route::post('/nueva','nuevaGrabar')
+            ->name('admin.peliculas.nueva.grabar');
+
+        /*
+         * Un requerimiento típico en cualquier sistema web es tener valores en la URL.
+         * Tradicionalmente, esto lo hacemos con el query string (?campo=valor...).
+         * Pero para lo que URLs de pantallas de nuestro sitio, y no meramente valores de personalización (como una
+         * búsqueda), es un problema que los datos estén en el query string. Esto se debe a que los buscadores como
+         * Google penalizan las páginas que usan parámetros en el query string.
+         * Es por eso que en general se busca que las URLs sean "amigables", y usen segmentos de la ruta para definir
+         * los valores que son dinámicos.
+         * Estos segmentos dinámicos de las URLs, Laravel los llama "parámetros de ruta".
+         * Para identificarlos, usamos la sintaxis de {nombre} . Donde "nombre" se reemplaza por el nombre de la
+         * variable en la que Laravel va a ofrecer el valor (ver método del controller).
+         *
+         * Opcionalmente, podemos poner "restricciones" que tienen que cumplir esos parámetros.
+         */
+        Route::get('/{id}','ver')
+            ->name('admin.peliculas.ver')
+        //    ->where('id', '[0-9]+')
+            ->whereNumber('id');
+
+        Route::get('/{id}/editar','editarForm')
+            ->name('admin.peliculas.editar.form')
+            ->whereNumber('id');
+
+        Route::post('/{id}/editar','editarEjecutar')
+            ->name('admin.peliculas.editar.ejecutar')
+            ->whereNumber('id');
+
+
+        Route::get('/{id}/eliminar','eliminarConfirmar')
+            ->name('admin.peliculas.eliminar.confirmar')
+            ->whereNumber('id');
+
+        Route::post('/{id}/eliminar','eliminarEjecutar')
+            ->name('admin.peliculas.eliminar.ejecutar')
+            ->whereNumber('id');
+    });

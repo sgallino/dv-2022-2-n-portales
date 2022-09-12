@@ -25,6 +25,24 @@ class AdminPeliculasController extends Controller
         ]);
     }
 
+    // El parámetro "$id" sale del parámetro de la ruta "{id}".
+    public function ver(int $id)
+    {
+        // Obtenemos la película correspondiente a este id.
+        // Para esto, Laravel nos da el método find().
+        // Ese método retorna una instancia de la clase de Eloquent con los datos del registro cuya PK
+        // sea el valor provisto como argumento. Si no existe, retorna null.
+//        $pelicula = Pelicula::find($id);
+        // Si queremos que cuando un registro no exista, en vez de retornar null se lance una Exception,
+        // podemos usar el método "findOrFail".
+        // Este lanza una ModelNotFoundException, que Laravel, por defecto, captura y muestra un 404.
+        $pelicula = Pelicula::findOrFail($id);
+
+        return view('admin.peliculas.ver', [
+            'pelicula' => $pelicula,
+        ]);
+    }
+
     public function nuevaForm()
     {
         // Noten que en la función "view" podemos reemplazar las "/" de la ruta con ".".
@@ -62,12 +80,6 @@ class AdminPeliculasController extends Controller
         // Si queremos todos, salvo alguno que otro, podemos excluir datos usando el método except().
         $data = $request->except(['_token']);
 
-//        echo "<pre>";
-//        print_r($data);
-//        echo "</pre>";
-
-        // TODO: Subir la portada...
-
         // Validación
         // Laravel busca simplificarnos lo más posible el bajón de hacer las validaciones.
         // La clase Request tiene un método llamado "validate()", el cual recibe un array de las "reglas"
@@ -77,25 +89,106 @@ class AdminPeliculasController extends Controller
         // "flash", graba los mensajes de error en otra, y redirecciona al usuario a la pantalla de la que
         // vino. Siempre y cuando sea una petición por HTTP común.
         // Los datos enviados por la sesión son luego levantados automágicamente por Laravel (ver vista).
-        $request->validate([
-//            'titulo' => ['required', 'min:2'],
-            'titulo' => 'required|min:2',
-            'precio' => 'required|numeric|min:0',
-            'fecha_estreno' => 'required',
-        ], [
-            'titulo.required' => 'El título no puede quedar vacío.',
-            'titulo.min' => 'El título debe tener al menos :min caracteres.',
-            'precio.required' => 'El precio no puede quedar vacío.',
-            'precio.numeric' => 'El precio debe ser un número.',
-            'precio.min' => 'El precio debe ser positivo.',
-            'fecha_estreno.required' => 'La fecha de estreno no puede quedar vacía.',
-        ]);
+        $request->validate(Pelicula::VALIDATE_RULES, Pelicula::VALIDATE_MESSAGES);
+
+        /*
+         |--------------------------------------------------------------------------
+         | Upload de imagen
+         |--------------------------------------------------------------------------
+         | https://laravel.com/docs/9.x/requests#files
+         */
+        if($request->hasFile('portada')) {
+            $portada = $request->file('portada');
+            // Generamos un nombre para la imagen.
+            // Por ejemplo, la fecha actual, seguida de "_", seguida del título de la película transformado
+            // a un "slug" para la URL.
+            // Para hacer el slug, usamos el método Str::slug().
+            // Finalmente, le agregamos la extensión.
+            $nombrePortada = date('YmdHis') . "_" . \Str::slug($data['titulo']) . "." . $portada->clientExtension();
+
+            // Movemos la portada a su ubicación final.
+            // Para indicar el directorio, podemos ayudarnos con la función public_path() que genera la URL
+            // absoluta a la carpeta public.
+            $portada->move(public_path('imgs'), $nombrePortada);
+
+            $data['portada'] = $nombrePortada;
+        }
+
 
         // Usamos el método "static" Pelicula::create para grabar la data que le pasamos como parámetro.
         // Retorna la instancia de película creada y grabada en la base.
-        Pelicula::create($data);
+        $pelicula = Pelicula::create($data);
 
         // Redireccionamos al listado.
-        return redirect()->route('admin.peliculas.listado');
+        return redirect()
+            ->route('admin.peliculas.listado')
+            // Muchas veces vamos a querer mostrar mensajes de "feedback" al usuario luego de una acción
+            // y su redireccionamiento.
+            // Para esto, Laravel tiene el método "with()" de Redirect, que permite agregar variables
+            // de sesión tipo "flash".
+            ->with('status.message', 'La película <b>' . e($pelicula->titulo) . '</b> fue creada exitosamente.')
+            ->with('status.type', 'success');
+    }
+
+    public function editarForm(int $id)
+    {
+        $pelicula = Pelicula::findOrFail($id);
+
+        return view('admin.peliculas.editar-form', [
+            'pelicula' => $pelicula,
+        ]);
+    }
+
+    public function editarEjecutar(Request $request, int $id)
+    {
+        $request->validate(Pelicula::VALIDATE_RULES, Pelicula::VALIDATE_MESSAGES);
+
+        $pelicula = Pelicula::findOrFail($id);
+
+        $data = $request->except(['_token']);
+
+        if($request->hasFile('portada')) {
+            $portada = $request->file('portada');
+            $nombrePortada = date('YmdHis') . "_" . \Str::slug($data['titulo']) . "." . $portada->clientExtension();
+
+            $portada->move(public_path('imgs'), $nombrePortada);
+
+            $data['portada'] = $nombrePortada;
+            // Guardamos la portada vieja para poder eliminar luego del update...
+            $portadaVieja = $pelicula->portada;
+        }
+
+        $pelicula->update($data);
+
+        // Borramos la portada vieja.
+        if($portadaVieja ?? false) {
+            unlink(public_path('imgs/' . $portadaVieja));
+        }
+
+        return redirect()
+            ->route('admin.peliculas.listado')
+            ->with('status.message', 'La película <b>' . e($pelicula->titulo) . '</b> fue editada exitosamente.')
+            ->with('status.type', 'success');
+    }
+
+    public function eliminarConfirmar(int $id)
+    {
+        $pelicula = Pelicula::findOrFail($id);
+
+        return view('admin.peliculas.eliminar', [
+            'pelicula' => $pelicula,
+        ]);
+    }
+
+    public function eliminarEjecutar(int $id)
+    {
+        $pelicula = Pelicula::findOrFail($id);
+
+        $pelicula->delete();
+
+        return redirect()
+            ->route('admin.peliculas.listado')
+            ->with('status.message', 'La película <b>' . e($pelicula->titulo) . '</b> fue eliminada exitosamente.')
+            ->with('status.type', 'success');
     }
 }

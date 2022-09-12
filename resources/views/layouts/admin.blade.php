@@ -16,8 +16,8 @@
                 <?php
                 // La función url() permite generar una URL absoluta a partir de la carpeta [public] de
                 // Laravel, con el string que le pasamos por parámetro.
-                ?>
-                <a class="navbar-brand" href="{{ url('/') }}">DV Admin</a>
+//                ?>
+                <a class="navbar-brand" href="{--><!--{ url('/') }}">DV Admin</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Abrir/cerrar menú de navegación">
                     <span class="navbar-toggler-icon"></span>
                 </button>
@@ -35,8 +35,13 @@
             </div>
         </nav>
 
-        <main>
-            <section class="container py-4">
+        <main class="container py-4">
+            {{-- Agregamos, si se nos pide, el mensaje de estado.
+            Session es la clase de Laravel para interactuar con los valores de sesión. --}}
+            @if(Session::has('status.message'))
+                <div class="alert alert-{{ Session::get('status.type') ?? 'info' }}">{!! Session::get('status.message') !!}</div>
+            @endif
+            <section>
                 @yield('main')
             </section>
         </main>
