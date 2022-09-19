@@ -1,5 +1,6 @@
 <?php
 /** @var \Illuminate\Support\ViewErrorBag $errors */
+/** @var \Illuminate\Database\Eloquent\Collection|\App\Models\Pais[] $paises */
 
 // $errors es una variable que siempre existe en _todas_ las vistas, que es una colección de los mensajes
 // de error de validación, con métodos para su uso.
@@ -42,6 +43,23 @@
             {{-- Dentro de la directiva @error, Laravel provee automáticamente una variable "$message" con el primer mensaje de error de ese campo. --}}
             @error('precio')
                 <div class="text-danger" id="error-precio"><span class="visually-hidden">Error: </span> {{ $message }}</div>
+            @enderror
+        </div>
+        <div class="mb-3">
+            <label for="pais_id" class="form-label">País de origen</label>
+            <select
+                id="pais_id"
+                name="pais_id"
+                class="form-control"
+                @error('pais_id') aria-describedby="error-pais_id" @enderror
+            >
+                @foreach($paises as $pais)
+                <option value="{{ $pais->pais_id }}">{{ $pais->nombre }}</option>
+                @endforeach
+            </select>
+            {{-- Dentro de la directiva @error, Laravel provee automáticamente una variable "$message" con el primer mensaje de error de ese campo. --}}
+            @error('pais_id')
+            <div class="text-danger" id="error-pais_id"><span class="visually-hidden">Error: </span> {{ $message }}</div>
             @enderror
         </div>
         <div class="mb-3">

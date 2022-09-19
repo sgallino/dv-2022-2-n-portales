@@ -18,6 +18,7 @@
             <th>ID</th>
             <th>Título</th>
             <th>Precio</th>
+            <th>País</th>
             <th>Fecha de Estreno</th>
             <th>Acciones</th>
         </tr>
@@ -28,6 +29,11 @@
                 <td>{{ $pelicula->pelicula_id }}</td>
                 <td>{{ $pelicula->titulo }}</td>
                 <td>$ {{ $pelicula->precio }}</td>
+                {{-- Para acceder al registro de una tabla relacionada definida en el modelo, usamos la
+                 propiedad dinámica de Eloquent llamada igual que el método que definió la relación.
+                 En nuestro caso, creamos un método "pais()" para definir la relación con paises, así que
+                 la propiedad para acceder a la instancia de Pais asociada será "pais". --}}
+                <td>{{ $pelicula->pais->abreviatura }}</td>
                 <td>{{ $pelicula->fecha_estreno }}</td>
                 <td>
                     {{-- Como segundo parámetro de route(), pasamos un array con los valores para cada

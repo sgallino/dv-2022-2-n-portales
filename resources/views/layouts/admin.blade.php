@@ -17,7 +17,7 @@
                 // La función url() permite generar una URL absoluta a partir de la carpeta [public] de
                 // Laravel, con el string que le pasamos por parámetro.
 //                ?>
-                <a class="navbar-brand" href="{--><!--{ url('/') }}">DV Admin</a>
+                <a class="navbar-brand" href="{{ url('/') }}">DV Admin</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Abrir/cerrar menú de navegación">
                     <span class="navbar-toggler-icon"></span>
                 </button>

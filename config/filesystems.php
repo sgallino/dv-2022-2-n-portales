@@ -32,6 +32,7 @@ return [
 
         'local' => [
             'driver' => 'local',
+            // storage_path crea una ruta absoluta a la carpeta "storage" de la app de Laravel.
             'root' => storage_path('app'),
             'throw' => false,
         ],
@@ -39,7 +40,11 @@ return [
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
+            // 'url' define cuál es la URL que se tiene que generar cuando se utilice el método
+            // "Storage::url()".
             'url' => env('APP_URL').'/storage',
+//            'url' => url('/storage'), // Esto no funciona :(
+            // 'visibility' dice que esta carpeta sería de acceso público.
             'visibility' => 'public',
             'throw' => false,
         ],

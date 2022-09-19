@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Pais;
 use App\Models\Pelicula;
 use Illuminate\Http\Request;
 
@@ -10,7 +11,26 @@ class AdminPeliculasController extends Controller
     public function index()
     {
         // Obtenemos todas las películas de la tabla a través del modelo Pelicula.
-        $peliculas = Pelicula::all();
+//        $peliculas = Pelicula::all();
+        /*
+         |--------------------------------------------------------------------------
+         | Cargando datos con relaciones
+         |--------------------------------------------------------------------------
+         | El método "all()" solo sirve si queremos traer _todo_ lo que la tabla
+         | tiene, o sea todos sus registros, sin ningún tipo de agregado, como puede
+         | ser las relaciones.
+         |
+         | Para poder agregar otras características, entonces nosotros primero vamos
+         | definiendo las cosas que queremos sumar en consideración para la ejecución
+         | de la consulta, y finalmente, ejecutamos el método "get()" para correr el
+         | query.
+         |
+         | Por ejemplo, si queremos agregar relaciones al query, podemos hacerlo con
+         | el método "with()".
+         | Este método recibe un string o array de strings, que contengan los nombres
+         | de las relaciones. Esto sería el nombre del método.
+         */
+        $peliculas = Pelicula::with(['pais'])->get();
 
         // dd() (dump and die) es un helper de Laravel que imprime todo lo que tiene la variable que le
         // pasemos.
@@ -45,8 +65,14 @@ class AdminPeliculasController extends Controller
 
     public function nuevaForm()
     {
+//        $paises = Pais::all();
+        // Ordenamos los paises por su nombre. TODO: Agregar el índice adecuado en la migration.
+        $paises = Pais::orderBy('nombre')->get();
+
         // Noten que en la función "view" podemos reemplazar las "/" de la ruta con ".".
-        return view('admin.peliculas.nueva-form');
+        return view('admin.peliculas.nueva-form', [
+            'paises' => $paises,
+        ]);
     }
 
     public function nuevaGrabar(Request $request)
@@ -104,12 +130,16 @@ class AdminPeliculasController extends Controller
             // a un "slug" para la URL.
             // Para hacer el slug, usamos el método Str::slug().
             // Finalmente, le agregamos la extensión.
-            $nombrePortada = date('YmdHis') . "_" . \Str::slug($data['titulo']) . "." . $portada->clientExtension();
+            $nombrePortada = date('YmdHis') . "_" . \Str::slug($data['titulo']) . "." . $portada->extension();
 
             // Movemos la portada a su ubicación final.
             // Para indicar el directorio, podemos ayudarnos con la función public_path() que genera la URL
             // absoluta a la carpeta public.
-            $portada->move(public_path('imgs'), $nombrePortada);
+            // Forma 1: Moviendo el archivo a una ubicación indicada por nosotros.
+//            $portada->move(public_path('imgs'), $nombrePortada);
+
+            // Forma 2: Usando la API de Storage/Filesystem de Laravel.
+            $portada->storeAs('imgs', $nombrePortada, 'public');
 
             $data['portada'] = $nombrePortada;
         }
@@ -149,9 +179,13 @@ class AdminPeliculasController extends Controller
 
         if($request->hasFile('portada')) {
             $portada = $request->file('portada');
-            $nombrePortada = date('YmdHis') . "_" . \Str::slug($data['titulo']) . "." . $portada->clientExtension();
+            $nombrePortada = date('YmdHis') . "_" . \Str::slug($data['titulo']) . "." . $portada->extension();
 
-            $portada->move(public_path('imgs'), $nombrePortada);
+            // Forma 1: Moviendo el archivo a una ubicación indicada por nosotros.
+//            $portada->move(public_path('imgs'), $nombrePortada);
+
+            // Forma 2: Usando la API de Storage/Filesystem de Laravel.
+            $portada->storeAs('imgs', $nombrePortada, 'public');
 
             $data['portada'] = $nombrePortada;
             // Guardamos la portada vieja para poder eliminar luego del update...
@@ -162,7 +196,8 @@ class AdminPeliculasController extends Controller
 
         // Borramos la portada vieja.
         if($portadaVieja ?? false) {
-            unlink(public_path('imgs/' . $portadaVieja));
+//            unlink(public_path('imgs/' . $portadaVieja));
+            \Storage::disk('public')->delete('imgs/' . $portadaVieja);
         }
 
         return redirect()
@@ -183,8 +218,15 @@ class AdminPeliculasController extends Controller
     public function eliminarEjecutar(int $id)
     {
         $pelicula = Pelicula::findOrFail($id);
+        $portadaVieja = $pelicula->portada;
 
         $pelicula->delete();
+
+        // Borramos la portada vieja.
+        if($portadaVieja ?? false) {
+//            unlink(public_path('imgs/' . $portadaVieja));
+            \Storage::disk('public')->delete('imgs/' . $portadaVieja);
+        }
 
         return redirect()
             ->route('admin.peliculas.listado')
