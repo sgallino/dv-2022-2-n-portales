@@ -1,10 +1,18 @@
 <?php
 /** @var \Illuminate\Support\ViewErrorBag $errors */
 /** @var \App\Models\Pelicula $pelicula */
+/** @var \Illuminate\Database\Eloquent\Collection|\App\Models\Pais[] $paises */
+/** @var \Illuminate\Database\Eloquent\Collection|\App\Models\Genero[] $generos */
 
 // $errors es una variable que siempre existe en _todas_ las vistas, que es una colección de los mensajes
 // de error de validación, con métodos para su uso.
-// Para su uso,
+
+// Así podemos obtener los ids de los géneros de la película:
+//echo "<pre>";
+//print_r($pelicula->generos->pluck('genero_id')->toArray());
+//echo "</pre>";
+// Esto usa algunos métodos de las Collections de Laravel.
+
 ?>
 @extends('layouts.admin')
 
@@ -43,6 +51,29 @@
             {{-- Dentro de la directiva @error, Laravel provee automáticamente una variable "$message" con el primer mensaje de error de ese campo. --}}
             @error('precio')
                 <div class="text-danger" id="error-precio"><span class="visually-hidden">Error: </span> {{ $message }}</div>
+            @enderror
+        </div>
+        <div class="mb-3">
+            <label for="pais_id" class="form-label">País de Origen</label>
+            <select
+                id="pais_id"
+                name="pais_id"
+                class="form-control"
+                @error('pais_id') aria-describedby="error-pais_id" @enderror
+            >
+                @foreach($paises as $pais)
+                    <option
+                        value="{{ $pais->pais_id }}"
+                        {{--                    @if($pais->pais_id == old('pais_id')) selected @endif--}}
+                        @selected($pais->pais_id == old('pais_id', $pelicula->pais_id))
+                    >
+                        {{ $pais->nombre }}
+                    </option>
+                @endforeach
+            </select>
+            {{-- Dentro de la directiva @error, Laravel provee automáticamente una variable "$message" con el primer mensaje de error de ese campo. --}}
+            @error('pais_id')
+            <div class="text-danger" id="error-pais_id"><span class="visually-hidden">Error: </span> {{ $message }}</div>
             @enderror
         </div>
         <div class="mb-3">
@@ -87,6 +118,25 @@
                 value="{{ old('portada_descripcion', $pelicula->portada_descripcion) }}"
             >
         </div>
+
+        <fieldset class="mb-3">
+            <legend>Géneros</legend>
+
+            @foreach($generos as $genero)
+                <div class="form-check form-check-inline">
+                    <input
+                        type="checkbox"
+                        class="form-check-input"
+                        id="genero-{{ $genero->genero_id }}"
+                        name="generos[]"
+                        value="{{ $genero->genero_id }}"
+                        @checked(in_array($genero->genero_id, old('generos', $pelicula->generos->pluck('genero_id')->toArray())))
+                    >
+                    <label for="genero-{{ $genero->genero_id }}" class="form-check-label">{{ $genero->nombre }}</label>
+                </div>
+            @endforeach
+        </fieldset>
+
         <button type="submit" class="btn btn-primary">Publicar</button>
     </form>
 @endsection

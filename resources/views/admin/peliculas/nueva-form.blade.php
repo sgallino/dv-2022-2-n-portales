@@ -1,6 +1,7 @@
 <?php
 /** @var \Illuminate\Support\ViewErrorBag $errors */
 /** @var \Illuminate\Database\Eloquent\Collection|\App\Models\Pais[] $paises */
+/** @var \Illuminate\Database\Eloquent\Collection|\App\Models\Genero[] $generos */
 
 // $errors es una variable que siempre existe en _todas_ las vistas, que es una colección de los mensajes
 // de error de validación, con métodos para su uso.
@@ -46,7 +47,7 @@
             @enderror
         </div>
         <div class="mb-3">
-            <label for="pais_id" class="form-label">País de origen</label>
+            <label for="pais_id" class="form-label">País de Origen</label>
             <select
                 id="pais_id"
                 name="pais_id"
@@ -54,7 +55,13 @@
                 @error('pais_id') aria-describedby="error-pais_id" @enderror
             >
                 @foreach($paises as $pais)
-                <option value="{{ $pais->pais_id }}">{{ $pais->nombre }}</option>
+                <option
+                    value="{{ $pais->pais_id }}"
+{{--                    @if($pais->pais_id == old('pais_id')) selected @endif--}}
+                    @selected($pais->pais_id == old('pais_id'))
+                >
+                    {{ $pais->nombre }}
+                </option>
                 @endforeach
             </select>
             {{-- Dentro de la directiva @error, Laravel provee automáticamente una variable "$message" con el primer mensaje de error de ese campo. --}}
@@ -104,6 +111,27 @@
                 value="{{ old('portada_descripcion') }}"
             >
         </div>
+
+        <fieldset class="mb-3">
+            <legend>Géneros</legend>
+
+            @foreach($generos as $genero)
+            <div class="form-check form-check-inline">
+                <input
+                    type="checkbox"
+                    class="form-check-input"
+                    id="genero-{{ $genero->genero_id }}"
+                    name="generos[]"
+                    value="{{ $genero->genero_id }}"
+{{--                    @if(in_array($genero->genero_id, old('generos', []))) checked @endif--}}
+{{--                    @checked(old('generos') !== null && in_array($genero->genero_id, old('generos')))--}}
+                    @checked(in_array($genero->genero_id, old('generos', [])))
+                >
+                <label for="genero-{{ $genero->genero_id }}" class="form-check-label">{{ $genero->nombre }}</label>
+            </div>
+            @endforeach
+        </fieldset>
+
         <button type="submit" class="btn btn-primary">Publicar</button>
     </form>
 @endsection

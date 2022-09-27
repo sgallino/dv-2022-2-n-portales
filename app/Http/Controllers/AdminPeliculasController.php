@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Genero;
 use App\Models\Pais;
 use App\Models\Pelicula;
 use Illuminate\Http\Request;
@@ -30,7 +31,7 @@ class AdminPeliculasController extends Controller
          | Este método recibe un string o array de strings, que contengan los nombres
          | de las relaciones. Esto sería el nombre del método.
          */
-        $peliculas = Pelicula::with(['pais'])->get();
+        $peliculas = Pelicula::with(['pais', 'generos'])->get();
 
         // dd() (dump and die) es un helper de Laravel que imprime todo lo que tiene la variable que le
         // pasemos.
@@ -66,12 +67,13 @@ class AdminPeliculasController extends Controller
     public function nuevaForm()
     {
 //        $paises = Pais::all();
-        // Ordenamos los paises por su nombre. TODO: Agregar el índice adecuado en la migration.
+        // Ordenamos los paises por su nombre.
         $paises = Pais::orderBy('nombre')->get();
 
         // Noten que en la función "view" podemos reemplazar las "/" de la ruta con ".".
         return view('admin.peliculas.nueva-form', [
             'paises' => $paises,
+            'generos' => Genero::orderBy('nombre')->get(),
         ]);
     }
 
@@ -145,9 +147,81 @@ class AdminPeliculasController extends Controller
         }
 
 
-        // Usamos el método "static" Pelicula::create para grabar la data que le pasamos como parámetro.
-        // Retorna la instancia de película creada y grabada en la base.
-        $pelicula = Pelicula::create($data);
+        /*
+         |--------------------------------------------------------------------------
+         | Géneros
+         |--------------------------------------------------------------------------
+         | Como vimos en Programación 2, cuando tenemos datos de una tabla relacionada
+         | en forma n:m, vamos a tener que insertar en la tabla pivot un registro por
+         | cada id que nos llegue de esa relación. Por ejemplo, si tenemos los ids de
+         | géneros [2, 4, 7], tendremos que insertar 3 registros, uno por cada id de
+         | género.
+         | Cada uno tiene que insertarse junto al id de la película.
+         | Por eso, teníamos que primero insertar la película, obtener el id, y ahí
+         | recién armar el INSERT con los múltiples registros a grabar.
+         |
+         | https://laravel.com/docs/9.x/eloquent-relationships#updating-many-to-many-relationships
+         | Eloquent nos simplifica notablemente este proceso con ayuda de 3 métodos
+         | de las relaciones n:m, que son:
+         | - attach()
+         | - detach()
+         | - sync()
+         |
+         | Cualquiera de ellos debe llamarse sobre el método de la relación del modelo
+         | "padre". Por ejemplo, tendremos que llamarlo desde el método "generos()" de
+         | un modelo Pelicula.
+         | La película ya la creamos, y obtuvimos la instancia correspondiente con el
+         | $pelicula = Pelicula::create($data);
+         |
+         | Para grabar, entonces vamos a usar el método "attach()", que recibe un id
+         | o array de ids a insertar.
+         | Como puede no haber generos, nos aseguramos de poner un array vacío como
+         | default.
+         | Muy importante, noten que estamos llamando al _método_ "generos()", y no
+         | a la _propiedad_ "generos".
+         */
+
+        /*
+         |--------------------------------------------------------------------------
+         | Transacciones
+         |--------------------------------------------------------------------------
+         | Tenemos 2 maneras de implementar transacciones con Laravel:
+         | 1. La "manual", usando los métodos que corresponden a PDO.
+         | 2. Usando un "Closure".
+         */
+
+        // Forma 1: "Manual", mayor control.
+//        \DB::beginTransaction();
+//        try {
+//            // Usamos el método "static" Pelicula::create para grabar la data que le pasamos como parámetro.
+//            // Retorna la instancia de película creada y grabada en la base.
+//            $pelicula = Pelicula::create($data);
+////            throw new \Exception(); // Descomentar para ver que no graba si algo sale mal.
+//            $pelicula->generos()->attach($data['generos'] ?? []);
+//            \DB::commit();
+//            // ...
+//        } catch(\Exception $e) {
+//            \DB::rollBack();
+//            // ...
+//        }
+
+        // Forma 2: Usando un Closure.
+        // Cuando usamos un Closure, a diferencia de lo que pasa en JS, no tenemos acceso a las variables
+        // definidas en el contexto superior (el que contiene al Closure).
+        // Por ejemplo, $data no está disponible en el Closure, pese a que está definida en la función
+        // superior.
+        // Podemos hacer que sea accesible esa variable (o todas las que queramos), pero tenemos que hacerlo
+        // de manera explícita.
+        // Para "pasar" una variable a la función, agregamos la instrucción "use".
+        try {
+            \DB::transaction(function() use ($data) {
+                $pelicula = Pelicula::create($data);
+                $pelicula->generos()->attach($data['generos'] ?? []);
+            });
+            // ...
+        } catch(\Exception $e) {
+            // ...
+        }
 
         // Redireccionamos al listado.
         return redirect()
@@ -156,7 +230,8 @@ class AdminPeliculasController extends Controller
             // y su redireccionamiento.
             // Para esto, Laravel tiene el método "with()" de Redirect, que permite agregar variables
             // de sesión tipo "flash".
-            ->with('status.message', 'La película <b>' . e($pelicula->titulo) . '</b> fue creada exitosamente.')
+//            ->with('status.message', 'La película <b>' . e($pelicula->titulo) . '</b> fue creada exitosamente.')
+            ->with('status.message', 'La película <b>' . e($data['titulo']) . '</b> fue creada exitosamente.')
             ->with('status.type', 'success');
     }
 
@@ -166,6 +241,8 @@ class AdminPeliculasController extends Controller
 
         return view('admin.peliculas.editar-form', [
             'pelicula' => $pelicula,
+            'paises' => Pais::orderBy('nombre')->get(),
+            'generos' => Genero::orderBy('nombre')->get(),
         ]);
     }
 
@@ -194,6 +271,20 @@ class AdminPeliculasController extends Controller
 
         $pelicula->update($data);
 
+        /*
+         |--------------------------------------------------------------------------
+         | Géneros
+         |--------------------------------------------------------------------------
+         | Con ayuda del método "sync()", podemos resolver fácilmente este apartado.
+         | sync() recibe un id o array de ids, y se asegura de que solo esos ids
+         | queden como registros en la tabla pivot. Si hay registros que sobran, los
+         | elimina, si hay registros que faltan, los inserta.
+         |
+         | Como mencionamos antes, noten que lo invocamos desde el _método_ "generos()"
+         | y no desde la _propiedad_ "generos".
+         */
+        $pelicula->generos()->sync($data['generos'] ?? []);
+
         // Borramos la portada vieja.
         if($portadaVieja ?? false) {
 //            unlink(public_path('imgs/' . $portadaVieja));
@@ -219,6 +310,16 @@ class AdminPeliculasController extends Controller
     {
         $pelicula = Pelicula::findOrFail($id);
         $portadaVieja = $pelicula->portada;
+
+        /*
+         |--------------------------------------------------------------------------
+         | Géneros
+         |--------------------------------------------------------------------------
+         | Eliminamos los géneros con ayuda del método detach().
+         | Noten, nuevamente, que este método se ejecuta desde el _método_ "generos()"
+         | y no desde la _propiedad_ "generos".
+         */
+        $pelicula->generos()->detach();
 
         $pelicula->delete();
 

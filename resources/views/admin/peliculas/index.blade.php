@@ -6,7 +6,7 @@
 @section('title', 'Administración de Películas')
 
 @section('main')
-    <h1 class="mb-3">Administrar de Películas</h1>
+    <h1 class="mb-3">Administrar Películas</h1>
 
     <p class="mb-3">
         <a href="{{ route('admin.peliculas.nueva.form') }}">Publicar una nueva película</a>
@@ -19,6 +19,7 @@
             <th>Título</th>
             <th>Precio</th>
             <th>País</th>
+            <th>Géneros</th>
             <th>Fecha de Estreno</th>
             <th>Acciones</th>
         </tr>
@@ -34,6 +35,22 @@
                  En nuestro caso, creamos un método "pais()" para definir la relación con paises, así que
                  la propiedad para acceder a la instancia de Pais asociada será "pais". --}}
                 <td>{{ $pelicula->pais->abreviatura }}</td>
+                <td>
+                    {{-- isNotEmpty() es un método de las Collections de Laravel. --}}
+                    {{--@if($pelicula->generos->isNotEmpty())
+                        @foreach($pelicula->generos as $genero)
+                            <span class="badge bg-secondary">{{ $genero->nombre }}</span>
+                        @endforeach
+                    @else
+                        No especificado.
+                    @endif--}}
+                    {{-- Rescribiendo lo anterior con el bucle de Blade forelse: --}}
+                    @forelse($pelicula->generos as $genero)
+                        <span class="badge bg-secondary">{{ $genero->nombre }}</span>
+                    @empty
+                        No especificado.
+                    @endforelse
+                </td>
                 <td>{{ $pelicula->fecha_estreno }}</td>
                 <td>
                     {{-- Como segundo parámetro de route(), pasamos un array con los valores para cada

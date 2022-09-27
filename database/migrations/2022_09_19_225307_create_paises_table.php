@@ -19,6 +19,9 @@ return new class extends Migration
             $table->string('nombre', 125);
             $table->char('abreviatura', 3)->comment('Siguiendo el "alpha3" del ISO 3166. Por ejemplo: ARG, BRA.');
             $table->timestamps();
+
+            // Agregamos el índice para el nombre del país.
+            $table->index('nombre');
         });
     }
 

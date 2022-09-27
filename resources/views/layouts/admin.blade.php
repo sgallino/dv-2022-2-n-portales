@@ -28,7 +28,7 @@
                             <!-- <a class="nav-link active" aria-current="page" href="#">Home</a> -->
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url('admin/peliculas') }}">Administrar Película</a>
+                            <a class="nav-link" href="{{ url('admin/peliculas') }}">Administrar Películas</a>
                         </li>
                     </ul>
                 </div>
