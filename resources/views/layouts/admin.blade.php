@@ -30,6 +30,12 @@
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url('admin/peliculas') }}">Administrar Películas</a>
                         </li>
+                        <li class="nav-item">
+                            <form action="{{ route('auth.logout') }}" method="post">
+                                @csrf
+                                <button type="submit" class="btn nav-link">Cerrar Sesión</button>
+                            </form>
+                        </li>
                     </ul>
                 </div>
             </div>

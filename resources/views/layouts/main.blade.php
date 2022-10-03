@@ -43,9 +43,33 @@ Esto se logra con la directiva @yield('nombre')
                         <li class="nav-item">
                             <a class="nav-link" href="{{ route('nosotros') }}">Nosotros</a>
                         </li>
+                        {{--
+                        El método Auth::check() retorna true si el usuario está autenticado, false de lo
+                        contrario.
+                        Asimismo, tenemos un método Auth::guest() que funciona al revés: retorna true
+                        si no está autenticado, y false si lo está.
+                        --}}
+{{--                        @if(Auth::check())--}}
+                        {{--
+                        Alternativametne, podemos usar la directiva de Blade @auth
+                        --}}
+                        @auth
                         <li class="nav-item">
                             <a class="nav-link" href="{{ route('admin.peliculas.listado') }}">Ir al Panel</a>
                         </li>
+                        <li class="nav-item">
+                            <form action="{{ route('auth.logout') }}" method="post">
+                                @csrf
+                                <button type="submit" class="btn nav-link">Cerrar Sesión</button>
+                            </form>
+                        </li>
+                        @elseguest
+{{--                        @else--}}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ route('auth.login.form') }}">Iniciar Sesión</a>
+                        </li>
+                        @endauth
+{{--                        @endif--}}
                     </ul>
                 </div>
             </div>
@@ -53,6 +77,11 @@ Esto se logra con la directiva @yield('nombre')
 
         <main>
             <section class="container py-4">
+                {{-- Agregamos, si se nos pide, el mensaje de estado.
+                Session es la clase de Laravel para interactuar con los valores de sesión. --}}
+                @if(Session::has('status.message'))
+                    <div class="alert alert-{{ Session::get('status.type') ?? 'info' }}">{!! Session::get('status.message') !!}</div>
+                @endif
                 @yield('main')
             </section>
         </main>

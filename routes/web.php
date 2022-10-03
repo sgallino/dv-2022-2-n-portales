@@ -73,10 +73,47 @@ Route::get('/', [\App\Http\Controllers\HomeController::class, 'home'])
 Route::get('nosotros', [\App\Http\Controllers\NosotrosController::class, 'index'])
     ->name('nosotros');
 
-// Creamos (esto es opcional) un grupo de rutas.
-// Esto permite poner configuración común a todas las rutas que estén contenidas por el grupo.
-// Por ejemplo, ponemos un prefijo común para la URL de las rutas.
+/*
+ |--------------------------------------------------------------------------
+ | Autenticación
+ |--------------------------------------------------------------------------
+ */
+Route::get('iniciar-sesion', [\App\Http\Controllers\AuthController::class, 'loginForm'])
+    ->name('auth.login.form')
+    ->middleware(['guest']);
+Route::post('iniciar-sesion', [\App\Http\Controllers\AuthController::class, 'loginEjecutar'])
+    ->name('auth.login.ejecutar')
+    ->middleware(['guest']);
+Route::post('cerrar-sesion', [\App\Http\Controllers\AuthController::class, 'logout'])
+    ->name('auth.logout')
+    ->middleware(['auth']);
+
+Route::get('recuperar-password-email', [\App\Http\Controllers\RecuperarPasswordController::class, 'emailRecuperarForm'])
+    ->name('password.request')
+    ->middleware(['guest']);
+
+Route::post('recuperar-password-email', [\App\Http\Controllers\RecuperarPasswordController::class, 'emailRecuperarEnviar'])
+    ->name('password.email')
+    ->middleware(['guest']);
+
+Route::get('restablecer-password/{token}', [\App\Http\Controllers\RecuperarPasswordController::class, 'restablecerPasswordForm'])
+    ->name('password.reset')
+    ->middleware(['guest']);
+
+Route::post('restablecer-password', [\App\Http\Controllers\RecuperarPasswordController::class, 'restablecerPasswordEjecutar'])
+    ->name('password.update')
+    ->middleware(['guest']);
+
+/*
+ |--------------------------------------------------------------------------
+ | Películas
+ |--------------------------------------------------------------------------
+ | Creamos (esto es opcional) un grupo de rutas.
+ | Esto permite poner configuración común a todas las rutas que estén contenidas por el grupo.
+ | Por ejemplo, ponemos un prefijo común para la URL de las rutas.
+ */
 Route::prefix('admin/peliculas')
+    ->middleware(['auth']) // Requieren que el usuario esté autenticado.
     // Configuramos el Controller que, por defecto, todas las rutas del grupo deben usar.
     ->controller(\App\Http\Controllers\AdminPeliculasController::class)
     ->group(function() {

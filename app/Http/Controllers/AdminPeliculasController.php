@@ -218,21 +218,28 @@ class AdminPeliculasController extends Controller
                 $pelicula = Pelicula::create($data);
                 $pelicula->generos()->attach($data['generos'] ?? []);
             });
-            // ...
+
+            // Redireccionamos al listado.
+            return redirect()
+                ->route('admin.peliculas.listado')
+                // Muchas veces vamos a querer mostrar mensajes de "feedback" al usuario luego de una acción
+                // y su redireccionamiento.
+                // Para esto, Laravel tiene el método "with()" de Redirect, que permite agregar variables
+                // de sesión tipo "flash".
+//            ->with('status.message', 'La película <b>' . e($pelicula->titulo) . '</b> fue creada exitosamente.')
+                ->with('status.message', 'La película <b>' . e($data['titulo']) . '</b> fue creada exitosamente.')
+                ->with('status.type', 'success');
         } catch(\Exception $e) {
-            // ...
+            return redirect()
+                ->route('admin.peliculas.nueva.form')
+                // withInput() agrega los datos del form en una variable "flash" de sesión, para que estén
+                // disponibles en la función "old()".
+                ->withInput()
+                ->with('status.message', 'Ocurrió un error inesperado al tratar de crear la película.')
+                ->with('status.type', 'danger');
         }
 
-        // Redireccionamos al listado.
-        return redirect()
-            ->route('admin.peliculas.listado')
-            // Muchas veces vamos a querer mostrar mensajes de "feedback" al usuario luego de una acción
-            // y su redireccionamiento.
-            // Para esto, Laravel tiene el método "with()" de Redirect, que permite agregar variables
-            // de sesión tipo "flash".
-//            ->with('status.message', 'La película <b>' . e($pelicula->titulo) . '</b> fue creada exitosamente.')
-            ->with('status.message', 'La película <b>' . e($data['titulo']) . '</b> fue creada exitosamente.')
-            ->with('status.type', 'success');
+
     }
 
     public function editarForm(int $id)
@@ -269,8 +276,6 @@ class AdminPeliculasController extends Controller
             $portadaVieja = $pelicula->portada;
         }
 
-        $pelicula->update($data);
-
         /*
          |--------------------------------------------------------------------------
          | Géneros
@@ -283,18 +288,32 @@ class AdminPeliculasController extends Controller
          | Como mencionamos antes, noten que lo invocamos desde el _método_ "generos()"
          | y no desde la _propiedad_ "generos".
          */
-        $pelicula->generos()->sync($data['generos'] ?? []);
 
-        // Borramos la portada vieja.
-        if($portadaVieja ?? false) {
+        try {
+            \DB::transaction(function() use($data, $pelicula) {
+                $pelicula->update($data);
+                $pelicula->generos()->sync($data['generos'] ?? []);
+            });
+
+            // Borramos la portada vieja.
+            if($portadaVieja ?? false) {
 //            unlink(public_path('imgs/' . $portadaVieja));
-            \Storage::disk('public')->delete('imgs/' . $portadaVieja);
-        }
+                \Storage::disk('public')->delete('imgs/' . $portadaVieja);
+            }
 
-        return redirect()
-            ->route('admin.peliculas.listado')
-            ->with('status.message', 'La película <b>' . e($pelicula->titulo) . '</b> fue editada exitosamente.')
-            ->with('status.type', 'success');
+            return redirect()
+                ->route('admin.peliculas.listado')
+                ->with('status.message', 'La película <b>' . e($pelicula->titulo) . '</b> fue editada exitosamente.')
+                ->with('status.type', 'success');
+        } catch(\Exception $e) {
+            return redirect()
+                ->route('admin.peliculas.editar.form', ['id' => $id])
+                // withInput() agrega los datos del form en una variable "flash" de sesión, para que estén
+                // disponibles en la función "old()".
+                ->withInput()
+                ->with('status.message', 'Ocurrió un error inesperado al tratar de actualizar la película.')
+                ->with('status.type', 'danger');
+        }
     }
 
     public function eliminarConfirmar(int $id)
@@ -319,19 +338,30 @@ class AdminPeliculasController extends Controller
          | Noten, nuevamente, que este método se ejecuta desde el _método_ "generos()"
          | y no desde la _propiedad_ "generos".
          */
-        $pelicula->generos()->detach();
+        try {
+            \DB::transaction(function() use ($pelicula) {
+                $pelicula->generos()->detach();
+                $pelicula->delete();
+            });
 
-        $pelicula->delete();
-
-        // Borramos la portada vieja.
-        if($portadaVieja ?? false) {
+            // Borramos la portada vieja.
+            if($portadaVieja ?? false) {
 //            unlink(public_path('imgs/' . $portadaVieja));
-            \Storage::disk('public')->delete('imgs/' . $portadaVieja);
-        }
+                \Storage::disk('public')->delete('imgs/' . $portadaVieja);
+            }
 
-        return redirect()
-            ->route('admin.peliculas.listado')
-            ->with('status.message', 'La película <b>' . e($pelicula->titulo) . '</b> fue eliminada exitosamente.')
-            ->with('status.type', 'success');
+            return redirect()
+                ->route('admin.peliculas.listado')
+                ->with('status.message', 'La película <b>' . e($pelicula->titulo) . '</b> fue eliminada exitosamente.')
+                ->with('status.type', 'success');
+        } catch(\Exception $e) {
+            return redirect()
+                ->route('admin.peliculas.editar.form', ['id' => $id])
+                // withInput() agrega los datos del form en una variable "flash" de sesión, para que estén
+                // disponibles en la función "old()".
+                ->withInput()
+                ->with('status.message', 'Ocurrió un error inesperado al tratar de actualizar la película.')
+                ->with('status.type', 'danger');
+        }
     }
 }
