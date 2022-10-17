@@ -3,6 +3,7 @@
 /** @var \App\Models\Pelicula $pelicula */
 /** @var \Illuminate\Database\Eloquent\Collection|\App\Models\Pais[] $paises */
 /** @var \Illuminate\Database\Eloquent\Collection|\App\Models\Genero[] $generos */
+/** @var \Illuminate\Database\Eloquent\Collection|\App\Models\Clasificacion[] $clasificaciones */
 
 // $errors es una variable que siempre existe en _todas_ las vistas, que es una colección de los mensajes
 // de error de validación, con métodos para su uso.
@@ -74,6 +75,27 @@
             {{-- Dentro de la directiva @error, Laravel provee automáticamente una variable "$message" con el primer mensaje de error de ese campo. --}}
             @error('pais_id')
             <div class="text-danger" id="error-pais_id"><span class="visually-hidden">Error: </span> {{ $message }}</div>
+            @enderror
+        </div>
+        <div class="mb-3">
+            <label for="clasificacion_id" class="form-label">Clasificación</label>
+            <select
+                id="clasificacion_id"
+                name="clasificacion_id"
+                class="form-control"
+                @error('clasificacion_id') aria-describedby="error-clasificacion_id" @enderror
+            >
+                @foreach($clasificaciones as $clasificacion)
+                    <option
+                        value="{{ $clasificacion->clasificacion_id }}"
+                        @selected($clasificacion->clasificacion_id == old('clasificacion_id', $pelicula->clasificacion_id))
+                    >
+                        {{ $clasificacion->nombre }}
+                    </option>
+                @endforeach
+            </select>
+            @error('clasificacion_id')
+            <div class="text-danger" id="error-clasificacion_id"><span class="visually-hidden">Error: </span> {{ $message }}</div>
             @enderror
         </div>
         <div class="mb-3">

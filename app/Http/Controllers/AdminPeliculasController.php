@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Clasificacion;
 use App\Models\Genero;
 use App\Models\Pais;
 use App\Models\Pelicula;
@@ -31,7 +32,7 @@ class AdminPeliculasController extends Controller
          | Este método recibe un string o array de strings, que contengan los nombres
          | de las relaciones. Esto sería el nombre del método.
          */
-        $peliculas = Pelicula::with(['pais', 'generos'])->get();
+        $peliculas = Pelicula::with(['pais', 'generos', 'clasificacion'])->get();
 
         // dd() (dump and die) es un helper de Laravel que imprime todo lo que tiene la variable que le
         // pasemos.
@@ -74,6 +75,7 @@ class AdminPeliculasController extends Controller
         return view('admin.peliculas.nueva-form', [
             'paises' => $paises,
             'generos' => Genero::orderBy('nombre')->get(),
+            'clasificaciones' => Clasificacion::get(),
         ]);
     }
 
@@ -250,6 +252,7 @@ class AdminPeliculasController extends Controller
             'pelicula' => $pelicula,
             'paises' => Pais::orderBy('nombre')->get(),
             'generos' => Genero::orderBy('nombre')->get(),
+            'clasificaciones' => Clasificacion::get(),
         ]);
     }
 

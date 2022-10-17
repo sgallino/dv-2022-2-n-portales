@@ -143,7 +143,8 @@ Route::prefix('admin/peliculas')
         Route::get('/{id}','ver')
             ->name('admin.peliculas.ver')
         //    ->where('id', '[0-9]+')
-            ->whereNumber('id');
+            ->whereNumber('id')
+            ->middleware('mayor-edad');
 
         Route::get('/{id}/editar','editarForm')
             ->name('admin.peliculas.editar.form')
@@ -162,3 +163,10 @@ Route::prefix('admin/peliculas')
             ->name('admin.peliculas.eliminar.ejecutar')
             ->whereNumber('id');
     });
+
+
+Route::get('peliculas/{id}/confirmar-edad', [\App\Http\Controllers\ConfirmarEdadController::class, 'confirmarForm'])
+    ->name('confirmar-mayoria-edad.form');
+
+Route::post('peliculas/{id}/confirmar-edad', [\App\Http\Controllers\ConfirmarEdadController::class, 'confirmarEjecutar'])
+    ->name('confirmar-mayoria-edad.ejecutar');

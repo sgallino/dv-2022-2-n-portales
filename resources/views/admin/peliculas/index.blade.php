@@ -20,6 +20,7 @@
             <th>Precio</th>
             <th>País</th>
             <th>Géneros</th>
+            <th>Clasificación</th>
             <th>Fecha de Estreno</th>
             <th>Acciones</th>
         </tr>
@@ -51,6 +52,7 @@
                         No especificado.
                     @endforelse
                 </td>
+                <td>{{ $pelicula->clasificacion->abreviatura }}</td>
                 <td>{{ $pelicula->fecha_estreno }}</td>
                 <td>
                     {{-- Como segundo parámetro de route(), pasamos un array con los valores para cada
