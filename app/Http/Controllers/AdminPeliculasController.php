@@ -2,15 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\PeliculaReservada;
 use App\Models\Clasificacion;
 use App\Models\Genero;
 use App\Models\Pais;
 use App\Models\Pelicula;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 class AdminPeliculasController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         // Obtenemos todas las películas de la tabla a través del modelo Pelicula.
 //        $peliculas = Pelicula::all();
@@ -32,11 +34,39 @@ class AdminPeliculasController extends Controller
          | Este método recibe un string o array de strings, que contengan los nombres
          | de las relaciones. Esto sería el nombre del método.
          */
-        $peliculas = Pelicula::with(['pais', 'generos', 'clasificacion'])->get();
+        /*
+         |--------------------------------------------------------------------------
+         | Paginación
+         |--------------------------------------------------------------------------
+         | Para pedirle a Eloquent o al query builder que traiga los resultados
+         | paginados, tenemos que reemplazar el método get() por paginate(), pasando
+         | como argumento la cantidad de registros por página.
+         |
+         |--------------------------------------------------------------------------
+         | Buscador
+         |--------------------------------------------------------------------------
+         | Para buscar, vamos a necesitar partir el query builder en pasos:
+         | 1. Definir la estructura básica (ej: qué modelo, qué relaciones, etc).
+         | 2. Agregar, si hace falta, las condiciones de búsqueda.
+         | 3. Ejecutar la consulta.
+         |
+         | Los valores de búsqueda que llegan por el query string los vamos a pedir
+         | a la clase Request, que inyectamos en el método.
+         */
+//        $peliculas = Pelicula::with(['pais', 'generos', 'clasificacion'])->get();
+        $builder = Pelicula::with(['pais', 'generos', 'clasificacion']);
 
-        // dd() (dump and die) es un helper de Laravel que imprime todo lo que tiene la variable que le
-        // pasemos.
-//        dd($peliculas);
+        // Nota: Todo esto de la búsqueda, así como lo del query en general, podría estar en una clase
+        // aparte para dejar más limpio el controller.
+        $buscarParams = [
+            'titulo' => $request->query('titulo', null),
+        ];
+
+        if($buscarParams['titulo']) {
+            $builder->where('titulo', 'LIKE', '%' . $buscarParams['titulo'] . '%');
+        }
+
+        $peliculas = $builder->paginate(2)->withQueryString();
 
         // Ahora necesitamos pasarle esa variable a la vista.
         // Esto lo hacemos con el segundo parámetro de la función "view()", que recibe un array asociativo,
@@ -44,6 +74,17 @@ class AdminPeliculasController extends Controller
         return view('admin/peliculas/index', [
             'peliculas' => $peliculas,
 //            'peliculas' => Pelicula::all(),
+            'buscarParams' => $buscarParams,
+        ]);
+    }
+
+    public function papelera()
+    {
+        return view('admin.peliculas.papelera', [
+            // Si queremos traer todas las películas, incluyendo las eliminadas, podemos usar withTrashed()
+//            'peliculas' => Pelicula::withTrashed()->with(['pais', 'generos', 'clasificacion'])->get(),
+            // Si solo queremos las películas eliminadas, podemos usar onlyTrashed()
+            'peliculas' => Pelicula::onlyTrashed()->with(['pais', 'generos', 'clasificacion'])->get(),
         ]);
     }
 
@@ -202,7 +243,7 @@ class AdminPeliculasController extends Controller
 //            $pelicula->generos()->attach($data['generos'] ?? []);
 //            \DB::commit();
 //            // ...
-//        } catch(\Exception $e) {
+//        } catch(\\Throwable $e) {
 //            \DB::rollBack();
 //            // ...
 //        }
@@ -231,7 +272,7 @@ class AdminPeliculasController extends Controller
 //            ->with('status.message', 'La película <b>' . e($pelicula->titulo) . '</b> fue creada exitosamente.')
                 ->with('status.message', 'La película <b>' . e($data['titulo']) . '</b> fue creada exitosamente.')
                 ->with('status.type', 'success');
-        } catch(\Exception $e) {
+        } catch(\Throwable $e) {
             return redirect()
                 ->route('admin.peliculas.nueva.form')
                 // withInput() agrega los datos del form en una variable "flash" de sesión, para que estén
@@ -308,7 +349,7 @@ class AdminPeliculasController extends Controller
                 ->route('admin.peliculas.listado')
                 ->with('status.message', 'La película <b>' . e($pelicula->titulo) . '</b> fue editada exitosamente.')
                 ->with('status.type', 'success');
-        } catch(\Exception $e) {
+        } catch(\Throwable $e) {
             return redirect()
                 ->route('admin.peliculas.editar.form', ['id' => $id])
                 // withInput() agrega los datos del form en una variable "flash" de sesión, para que estén
@@ -343,7 +384,7 @@ class AdminPeliculasController extends Controller
          */
         try {
             \DB::transaction(function() use ($pelicula) {
-                $pelicula->generos()->detach();
+//                $pelicula->generos()->detach();
                 $pelicula->delete();
             });
 
@@ -357,7 +398,7 @@ class AdminPeliculasController extends Controller
                 ->route('admin.peliculas.listado')
                 ->with('status.message', 'La película <b>' . e($pelicula->titulo) . '</b> fue eliminada exitosamente.')
                 ->with('status.type', 'success');
-        } catch(\Exception $e) {
+        } catch(\Throwable $e) {
             return redirect()
                 ->route('admin.peliculas.editar.form', ['id' => $id])
                 // withInput() agrega los datos del form en una variable "flash" de sesión, para que estén
@@ -366,5 +407,53 @@ class AdminPeliculasController extends Controller
                 ->with('status.message', 'Ocurrió un error inesperado al tratar de actualizar la película.')
                 ->with('status.type', 'danger');
         }
+    }
+
+    public function restaurarEjecutar(int $id)
+    {
+        // Para restaurar un registro eliminado, podemos usar el método restore().
+        $pelicula = Pelicula::onlyTrashed()->findOrFail($id);
+        $pelicula->restore();
+
+        return redirect()
+            ->route('admin.peliculas.papelera')
+            ->with('status.message', 'La película <b>' . $pelicula->titulo . '</b> fue restaurada exitosamente.')
+            ->with('status.type', 'success');
+    }
+
+    public function eliminarDefinitivamenteEjecutar(int $id)
+    {
+        $pelicula = Pelicula::onlyTrashed()->findOrFail($id);
+
+        try {
+            \DB::transaction(function() use ($pelicula) {
+                $pelicula->generos()->detach();
+                // forceDelete borra el registro físicamente, en vez de cambiar el campo "deleted_at".
+                $pelicula->forceDelete();
+            });
+
+            return redirect()
+                ->route('admin.peliculas.papelera')
+                ->with('status.message', 'La película <b>' . $pelicula->titulo . '</b> fue eliminada de manera definitiva exitosamente.')
+                ->with('status.type', 'success');
+        } catch(\Throwable $e) {
+            return redirect()
+                ->route('admin.peliculas.papelera')
+                ->with('status.message', 'Ocurrió un error inesperado. La película <b>' . $pelicula->titulo . '</b> no pudo ser elimninada.')
+                ->with('status.type', 'danger');
+        }
+    }
+
+    public function reservarEjecutar(Request $request, int $id)
+    {
+        $pelicula = Pelicula::findOrFail($id);
+
+        // Al método "to()" le podemos pasar la instancia de la clase Usuario a la que enviar el email.
+        Mail::to($request->user())->send(new PeliculaReservada($pelicula, $request->user()));
+
+        return redirect()
+            ->route('admin.peliculas.listado')
+            ->with('status.message', 'La película <b>' . $pelicula->titulo . '</b> fue reservada exitosamente.')
+            ->with('status.type', 'success');
     }
 }

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * App\Models\Pelicula
@@ -39,10 +40,16 @@ use Illuminate\Database\Eloquent\Model;
  * @method static \Illuminate\Database\Eloquent\Builder|Pelicula whereTitulo($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Pelicula whereUpdatedAt($value)
  * @mixin \Eloquent
+ * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @method static \Illuminate\Database\Query\Builder|Pelicula onlyTrashed()
+ * @method static \Illuminate\Database\Eloquent\Builder|Pelicula whereDeletedAt($value)
+ * @method static \Illuminate\Database\Query\Builder|Pelicula withTrashed()
+ * @method static \Illuminate\Database\Query\Builder|Pelicula withoutTrashed()
  */
 class Pelicula extends Model
 {
 //    use HasFactory;
+    use SoftDeletes;
 
     // Por defecto, Laravel supone que el nombre de la tabla asociada a este modelo, es el nombre del
     // modelo en minúsculas y en plural (de inglés).

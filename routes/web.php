@@ -120,6 +120,9 @@ Route::prefix('admin/peliculas')
         Route::get('/','index')
             ->name('admin.peliculas.listado');
 
+        Route::get('/papelera','papelera')
+            ->name('admin.peliculas.papelera');
+
         Route::get('/nueva','nuevaForm')
             ->name('admin.peliculas.nueva.form');
 
@@ -161,6 +164,18 @@ Route::prefix('admin/peliculas')
 
         Route::post('/{id}/eliminar','eliminarEjecutar')
             ->name('admin.peliculas.eliminar.ejecutar')
+            ->whereNumber('id');
+
+        Route::post('/{id}/restaurar','restaurarEjecutar')
+            ->name('admin.peliculas.restaurar.ejecutar')
+            ->whereNumber('id');
+
+        Route::post('/{id}/eliminar-definitivamente','eliminarDefinitivamenteEjecutar')
+            ->name('admin.peliculas.eliminar-definitivamente.ejecutar')
+            ->whereNumber('id');
+
+        Route::post('/{id}/reservar','reservarEjecutar')
+            ->name('admin.peliculas.reservar.ejecutar')
             ->whereNumber('id');
     });
 

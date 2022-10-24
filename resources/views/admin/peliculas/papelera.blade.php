@@ -4,17 +4,16 @@
 ?>
 @extends('layouts.admin')
 
-@section('title', 'Administración de Películas')
+@section('title', 'Películas Eliminadas')
 
 @section('main')
-    <h1 class="mb-3">Administrar Películas</h1>
+    <h1 class="mb-3">Papelera de Reciclaje de Películas</h1>
 
     <p class="mb-3">
-        <a href="{{ route('admin.peliculas.nueva.form') }}">Publicar una nueva película</a>
-        <a href="{{ route('admin.peliculas.papelera') }}">Ver películas eliminadas</a>
+        <a href="{{ route('admin.peliculas.listado') }}">Volver al listado</a>
     </p>
 
-    <section class="mb-3">
+    {{--<section class="mb-3">
         <h2 class="mb-3">Buscador</h2>
 
         <form action="{{ route('admin.peliculas.listado') }}" method="get">
@@ -24,8 +23,9 @@
             </div>
             <button type="submit" class="btn btn-primary">Buscar</button>
         </form>
-    </section>
+    </section>--}}
 
+    @if($peliculas->isNotEmpty())
     <table class="table table-bordered table-striped">
         <thead>
         <tr>
@@ -72,19 +72,25 @@
                     <div class="d-flex gap-1">
                         {{-- Como segundo parámetro de route(), pasamos un array con los valores para cada
                          parámetro de ruta que se necesite. --}}
-                        <form action="{{ route('admin.peliculas.reservar.ejecutar', ['id' => $pelicula->pelicula_id]) }}" method="post">
+                        {{--<a href="{{ route('admin.peliculas.ver', ['id' => $pelicula->pelicula_id]) }}" class="btn btn-primary">Ver</a>--}}
+                        {{-- TODO: Que el eliminar pida una confirmación. --}}
+                        <form action="{{ route('admin.peliculas.restaurar.ejecutar', ['id' => $pelicula->pelicula_id]) }}" method="post">
                             @csrf
-                            <button type="submit" class="btn btn-success">Reservar</button>
+                            <button type="submit" class="btn btn-primary">Restaurar</button>
                         </form>
-                        <a href="{{ route('admin.peliculas.ver', ['id' => $pelicula->pelicula_id]) }}" class="btn btn-primary">Ver</a>
-                        <a href="{{ route('admin.peliculas.editar.form', ['id' => $pelicula->pelicula_id]) }}" class="btn btn-secondary">Editar</a>
-                        <a href="{{ route('admin.peliculas.eliminar.confirmar', ['id' => $pelicula->pelicula_id]) }}" class="btn btn-danger">Eliminar</a>
+                        <form action="{{ route('admin.peliculas.eliminar-definitivamente.ejecutar', ['id' => $pelicula->pelicula_id]) }}" method="post">
+                            @csrf
+                            <button type="submit" class="btn btn-danger">Eliminar</button>
+                        </form>
                     </div>
                 </td>
             </tr>
         @endforeach
         </tbody>
     </table>
+    @else
+    <p>No hay películas eliminadas.</p>
+    @endif
 
-    {{ $peliculas->links() }}
+    {{--{{ $peliculas->links() }}--}}
 @endsection
